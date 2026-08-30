@@ -62,6 +62,24 @@ class Settings(BaseSettings):
     cache_ttl_seconds: int = Field(default=6 * 60 * 60, ge=0)
     cache_dir: Path = Field(default=PROJECT_ROOT / ".cache")
 
+    # --- Live operational context (AviationWeather.gov) -------------------
+    # Separate from the analytics data above on purpose: this is current
+    # conditions, never an input to any score or ranking.
+    enable_live_weather: bool = Field(
+        default=True,
+        description="Fetch current METAR conditions from AviationWeather.gov.",
+    )
+    aviation_weather_base_url: str = Field(
+        default="https://aviationweather.gov/api/data",
+        description="Base URL of the NOAA/NWS Aviation Weather Center Data API.",
+    )
+    aviation_weather_timeout_seconds: float = Field(default=8.0, gt=0)
+    aviation_weather_cache_ttl_seconds: int = Field(
+        default=600,
+        ge=0,
+        description="METARs are issued about hourly; 10 minutes is plenty.",
+    )
+
     # --- Analytics --------------------------------------------------------
     long_haul_miles: float = Field(
         default=2500.0,

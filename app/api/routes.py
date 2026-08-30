@@ -16,6 +16,7 @@ from app.analytics.metrics import (
     UnknownAirportError,
     get_airport_metrics,
     long_haul_breakdown,
+    resolve_iata,
 )
 from app.analytics.ranking import (
     SORTABLE_FIELDS,
@@ -29,9 +30,11 @@ from app.analytics.scoring import expansion_score, unmet_demand_proxy
 from app.config import Settings, get_settings
 from app.data.dataset import AirportDataset
 from app.data.repository import DataRepository, get_repository
+from app.services.aviation_weather import get_weather_provider
 from app.logging_config import get_logger
 from app.models.schemas import (
     AirportListResponse,
+    ConditionsResponse,
     ChatRequest,
     ChatResponse,
     CompareRequest,
@@ -100,6 +103,7 @@ def api_root() -> RootResponse:
             "GET /api/airports",
             "GET /api/airports/{iata}/metrics",
             "GET /api/airports/{iata}/score",
+            "GET /api/airports/{iata}/conditions",
             "GET /api/regions",
             "GET /api/data-status",
             "POST /api/compare",
@@ -201,6 +205,29 @@ def airport_score(iata: str, repository: RepositoryDep,
     return ScoreResponse(data_status=DataStatusResponse(**_status(dataset)),
                          **{k: v for k, v in result.items()
                             if k in ScoreResponse.model_fields})
+
+
+@router.get("/api/airports/{iata}/conditions", response_model=ConditionsResponse,
+            tags=["conditions"])
+def airport_conditions(iata: str, repository: RepositoryDep) -> ConditionsResponse:
+    """Current weather at an airport, from AviationWeather.gov (NOAA/NWS).
+
+    **Live operational context only.** This endpoint is completely separate from
+    the investment analytics: nothing here feeds the Airport Expansion Score,
+    the Unmet Demand Proxy or any ranking, which are computed from historical
+    US DOT / BTS data.
+
+    A 404 means the airport is not in the dataset. An upstream outage does *not*
+    produce an error status — it returns 200 with ``status`` set to
+    ``unavailable``, so a weather problem degrades one panel instead of the
+    request.
+    """
+    dataset = _dataset(repository)
+    try:
+        code = resolve_iata(dataset, iata)
+    except UnknownAirportError as exc:
+        raise _not_found(exc) from exc
+    return ConditionsResponse(**get_weather_provider().get_conditions(code))
 
 
 # ---------------------------------------------------------------------------

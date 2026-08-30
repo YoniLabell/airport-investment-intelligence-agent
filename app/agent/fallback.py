@@ -29,6 +29,12 @@ COMPARE_WORDS = ("compare", " vs ", " vs.", "versus", "against", "better", "whic
 CONGESTION_WORDS = ("congestion", "congested", "crowded", "busy", "busier", "utiliz")
 LONG_HAUL_WORDS = ("long-haul", "long haul", "longhaul", "transcon", "international share")
 UNMET_WORDS = ("unmet", "latent", "underserved", "under-served", "suppressed demand")
+# Deliberately specific. Bare tokens like "right now" or "fog" would hijack
+# analytics questions ("unmet demand at SFO right now"), so each phrase here has
+# to be unambiguous on its own.
+CONDITIONS_WORDS = ("weather", "metar", "current conditions", "conditions at",
+                    "conditions right now", "visibility at", "wind at",
+                    "raining", "snowing", "foggy", "flight category", "ceiling at")
 RANK_WORDS = ("which airport", "which airports", "rank", "top ", "best ", "strongest",
               "candidates", "candidate for", "shortlist", "leading")
 SCORE_WORDS = ("score", "expansion candidate", "expansion score")
@@ -107,6 +113,8 @@ def answer(
         text = _render_long_haul(call("get_long_haul_share", iata=codes[0]))
     elif any(w in lowered for w in UNMET_WORDS) and codes:
         text = _render_unmet(call("get_unmet_demand_proxy", iata=codes[0]))
+    elif any(w in lowered for w in CONDITIONS_WORDS) and codes:
+        text = _render_conditions(call("get_airport_conditions", iata=codes[0]))
     elif any(w in lowered for w in CONGESTION_WORDS) and codes:
         text = _render_congestion(call("compare_congestion", iatas=codes))
     elif len(codes) >= 2 and any(w in lowered for w in COMPARE_WORDS):
@@ -254,6 +262,49 @@ def _render_unmet(result: dict[str, Any]) -> str:
     lines += ["", "**What each signal reads as:**"]
     lines += [f"- {s['label']}: {s['reads_as']}" for s in result["signals"]]
     lines += ["", f"> {result['disclaimer']}"]
+    return "\n".join(lines)
+
+
+def _render_conditions(result: dict[str, Any]) -> str:
+    if "error" in result:
+        return f"**Conditions lookup failed.** {result['error']}"
+
+    header = (f"### Current conditions — {result['iata']}"
+              + (f" ({result['icao']})" if result.get("icao") else ""))
+    footer = ("_Source: AviationWeather.gov (NOAA/NWS) — live operational context. "
+              "This is **not** an input to the Airport Expansion Score or any "
+              "ranking, which use historical US DOT / BTS data._")
+
+    if result["status"] != "ok":
+        return "\n".join([header, "", f"**No observation available.** {result['message']}",
+                           "", footer])
+
+    lines = [header, "", f"**{result['summary']}**", ""]
+    if result.get("flight_category"):
+        lines.append(f"- Flight category: **{result['flight_category']}**"
+                     + (f" — {result['flight_category_meaning']}"
+                        if result.get("flight_category_meaning") else "")
+                     + (" _(derived from visibility and ceiling)_"
+                        if result.get("flight_category_derived") else ""))
+    if result["visibility"] and result["visibility"].get("display"):
+        lines.append(f"- Visibility: {result['visibility']['display']}")
+    if result["wind"] and result["wind"].get("display"):
+        lines.append(f"- Wind: {result['wind']['display']}")
+    if result.get("ceiling_feet_agl") is not None:
+        lines.append(f"- Ceiling: {result['ceiling_feet_agl']:,} ft AGL")
+    if result["weather"] and result["weather"].get("summary"):
+        lines.append(f"- Weather: {result['weather']['summary']}")
+    if result.get("temperature_c") is not None:
+        lines.append(f"- Temperature: {result['temperature_c']:.0f} °C"
+                     + (f", dew point {result['dewpoint_c']:.0f} °C"
+                        if result.get("dewpoint_c") is not None else ""))
+    if result.get("observed_at"):
+        age = result.get("observation_age_minutes")
+        lines.append(f"- Observed: {result['observed_at']}"
+                     + (f" ({age:.0f} min ago)" if age is not None else ""))
+    if result.get("raw_metar"):
+        lines += ["", f"Raw METAR: `{result['raw_metar']}`"]
+    lines += ["", footer]
     return "\n".join(lines)
 
 

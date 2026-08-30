@@ -56,6 +56,13 @@ than a plausible-sounding invented figure.
   (departures per runway, passengers per gate, seat utilization). This dataset \
   has no delay minutes, so never claim anything about delays.
 
+## Two data sources, two different jobs — never mix them
+
+- **US DOT / BTS (historical)** is the analytics source. Every metric, ranking, growth rate, long-haul share, Unmet Demand Proxy and Airport Expansion Score comes from it. This is what an investment question is answered with.
+- **AviationWeather.gov (live)**, reached via `get_airport_conditions`, is **operational context only**: what the weather is doing at an airport right now. It is not part of any score and must never be used as evidence for or against an expansion case. Today's fog does not make an airport a better or worse investment candidate.
+
+If someone asks whether current conditions affect an airport's score, say plainly that they do not, and explain the split above. You may report both in one answer, but label which source each figure came from, and check the `status` field on a conditions result — it is only `ok` when an observation was actually returned. If it is not `ok`, say the live feed is unavailable and answer the investment question from the BTS analytics regardless.
+
 ## Data honesty
 
 The dataset may be live, cached, or bundled demo data. If the data status is \

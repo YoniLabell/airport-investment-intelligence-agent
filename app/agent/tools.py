@@ -26,8 +26,10 @@ from app.analytics.regions import (
     filter_airports,
     list_regions,
 )
+from app.analytics.metrics import resolve_iata
 from app.analytics.scoring import expansion_score, unmet_demand_proxy
 from app.data.dataset import AirportDataset
+from app.services.aviation_weather import get_weather_provider
 from app.logging_config import get_logger
 
 log = get_logger(__name__)
@@ -92,6 +94,16 @@ def _unmet(dataset: AirportDataset, long_haul_miles: float, iata: str) -> dict[s
 
 def _overview(dataset: AirportDataset, long_haul_miles: float) -> dict[str, Any]:
     return dataset_overview(dataset, long_haul_miles)
+
+
+def _conditions(dataset: AirportDataset, long_haul_miles: float, iata: str) -> dict[str, Any]:
+    """Current weather at an airport — live context, never an analytics input.
+
+    The provider is resolved at call time rather than import time so the
+    singleton can be swapped in tests.
+    """
+    code = resolve_iata(dataset, iata)
+    return get_weather_provider().get_conditions(code)
 
 
 _IATA = {
@@ -247,6 +259,26 @@ TOOL_SPECS: list[dict[str, Any]] = [
             "required": ["iata"],
         },
         "fn": _unmet,
+    },
+    {
+        "name": "get_airport_conditions",
+        "description": (
+            "CURRENT weather and operating conditions at an airport, from "
+            "AviationWeather.gov (NOAA/NWS) METAR observations: flight category, "
+            "visibility, wind, present weather, ceiling, temperature and the raw "
+            "METAR. This is LIVE OPERATIONAL CONTEXT ONLY — it is not part of any "
+            "score, metric or ranking, all of which come from historical US DOT / "
+            "BTS data. Never let conditions influence an investment judgement, and "
+            "say plainly that today's weather is not an expansion signal if the "
+            "user implies otherwise. Check the 'status' field: it is 'ok' only "
+            "when an observation was returned."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"iata": _IATA},
+            "required": ["iata"],
+        },
+        "fn": _conditions,
     },
     {
         "name": "get_dataset_overview",

@@ -59,6 +59,7 @@ The deterministic layer (`app/analytics/`) exposes:
 | `capacity_constraint` | How constrained the terminal is |
 | `unmet_demand_proxy` | The 0–100 proxy index and its four signals |
 | `expansion_score` | The 0–100 Airport Expansion Score with a full breakdown |
+| `get_airport_conditions` | Current METAR conditions — **live context only, never scored** |
 
 Every one of these is reachable from the HTTP API as well as from the chat agent.
 
@@ -162,6 +163,40 @@ Every API response and every chat answer carries a status of `live`, `cached` or
 never presented as live.** If the external source fails, the app stays fully
 demoable and says plainly that it is running on bundled data.
 
+### Live operational context: AviationWeather.gov
+
+Separately from the historical analytics above, the app reads **current**
+conditions from the NOAA/NWS Aviation Weather Center's public, keyless JSON API:
+
+```
+GET https://aviationweather.gov/api/data/metar?ids=KSFO&format=json
+```
+
+`app/services/aviation_weather.py` converts IATA to ICAO (SFO → KSFO, and the
+enumerated Alaska/Hawaii/territory exceptions such as ANC → PANC, HNL → PHNL),
+calls the API with a hard timeout, and returns a structured observation: flight
+category, visibility, wind, present weather, cloud layers and ceiling,
+temperature, altimeter, observation time and age, and the raw METAR.
+
+**The two sources do different jobs, and the split is enforced in code:**
+
+| | Source | Role |
+|---|---|---|
+| **Historical** | US DOT / BTS T-100 | Every metric, ranking, Unmet Demand Proxy and Expansion Score |
+| **Live** | AviationWeather.gov | Operational context only — *never* an input to any score |
+
+Today's fog does not make an airport a better expansion candidate. Every
+conditions payload carries `used_in_scoring: false` and a `source_role` string
+saying so; the agent's system prompt forbids using conditions as investment
+evidence; and a test asserts an airport's score is byte-identical whether the
+weather feed is healthy, degraded or reporting LIFR.
+
+If AviationWeather.gov is slow or down, the endpoint still returns **HTTP 200**
+with `status` set to `unavailable` — an outage degrades one panel, never a
+request. Statuses are `ok`, `no_report`, `unsupported`, `unavailable` and
+`disabled`. Set `ENABLE_LIVE_WEATHER=false` to switch the integration off
+entirely.
+
 ### About the bundled demo data
 
 Airport-level passenger, seat and flight totals are **rounded approximations of
@@ -213,7 +248,7 @@ edit a file and reload the page.
 Run the tests:
 
 ```bash
-pytest                              # 147 tests
+pytest                              # 232 tests
 ```
 
 Regenerate the demo dataset:
@@ -239,6 +274,7 @@ python scripts/generate_seed_data.py
 | `GET` | `/api/regions` | Regions and their member airports |
 | `GET` | `/api/airports/{iata}/metrics` | Metrics + long-haul + unmet-demand proxy |
 | `GET` | `/api/airports/{iata}/score` | Expansion Score with full breakdown |
+| `GET` | `/api/airports/{iata}/conditions` | Current METAR conditions (live context, not analytics) |
 | `GET` | `/api/data-status` | Live / cached / demo, with provenance |
 | `GET` | `/api/overview` | Dataset coverage summary |
 | `POST` | `/api/compare` | `{"iatas": ["LAX","SNA"], "view": "full"\|"congestion"}` |
@@ -249,6 +285,7 @@ python scripts/generate_seed_data.py
 curl localhost:8000/health
 curl "localhost:8000/api/airports?region=New%20England"
 curl localhost:8000/api/airports/SFO/score
+curl localhost:8000/api/airports/SFO/conditions
 curl -X POST localhost:8000/api/rank \
   -H 'content-type: application/json' \
   -d '{"region":"New England","limit":5}'
@@ -328,6 +365,9 @@ app/
     scoring.py           Expansion Score + Unmet Demand Proxy
     ranking.py           ranking and comparison
     regions.py           region/state resolution
+  services/              live operational context (kept out of analytics)
+    icao.py              IATA -> ICAO station-code resolution
+    aviation_weather.py  AviationWeather.gov METAR provider
   agent/
     prompts.py           the system prompt (incl. the arithmetic ban)
     tools.py             tool schemas + dispatch to analytics
@@ -339,7 +379,7 @@ frontend/               static dashboard, no build step
   js/api.js              fetch client with timeouts and typed errors
   js/markdown.js         ~120-line renderer for the agent's answers
   js/app.js              tabs, rendering, state
-tests/                   147 tests
+tests/                   232 tests
 scripts/                 seed-data generator
 docs/DESIGN.md           architecture, methodology, limitations
 ```
@@ -356,6 +396,7 @@ docs/DESIGN.md           architecture, methodology, limitations
 - Rank the top 5 airports nationwide by unmet demand.
 - Why did AUS score so highly?
 - How does BOS compare with PVD?
+- What are the current conditions at SFO? *(live METAR, not part of any score)*
 
 See [`docs/DESIGN.md`](docs/DESIGN.md) for the architecture, methodology,
 assumptions, limitations and tradeoffs.

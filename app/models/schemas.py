@@ -74,6 +74,51 @@ class ScoreResponse(BaseModel):
     data_status: DataStatusResponse
 
 
+class ConditionsResponse(BaseModel):
+    """Current conditions at an airport, from AviationWeather.gov.
+
+    Returned with HTTP 200 even when no observation is available: this is
+    supplementary context, so an upstream outage degrades the payload rather
+    than the request. Always read ``status`` before trusting the fields.
+    """
+
+    # Always present
+    iata: str
+    icao: str | None = None
+    status: Literal["ok", "no_report", "unsupported", "unavailable", "disabled"]
+    message: str
+    observation_available: bool
+    source: str
+    source_url: str
+    source_role: str = Field(
+        ...,
+        description="States that this is live context, not an analytics input.",
+    )
+    data_kind: Literal["live_operational_context"] = "live_operational_context"
+    used_in_scoring: Literal[False] = False
+
+    # Present when status == "ok"
+    station_name: str | None = None
+    observed_at: str | None = None
+    observation_age_minutes: float | None = None
+    raw_metar: str | None = None
+    flight_category: str | None = None
+    flight_category_meaning: str | None = None
+    flight_category_derived: bool | None = None
+    visibility: dict[str, Any] | None = None
+    wind: dict[str, Any] | None = None
+    weather: dict[str, Any] | None = None
+    cloud_layers: list[dict[str, Any]] | None = None
+    ceiling_feet_agl: int | None = None
+    temperature_c: float | None = None
+    dewpoint_c: float | None = None
+    altimeter_hpa: float | None = None
+    altimeter_in_hg: float | None = None
+    summary: str | None = None
+    cached: bool | None = None
+    cache_age_seconds: int | None = None
+
+
 class CompareRequest(BaseModel):
     iatas: list[str] = Field(..., min_length=2, max_length=6,
                              description="Two to six IATA codes.")

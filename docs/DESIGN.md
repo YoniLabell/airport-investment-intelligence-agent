@@ -35,13 +35,23 @@ limitations and tradeoffs.
                                         ┌──────────────▼─────────────────┐
                                         │  Data (app/data)               │
                                         │  BTS → cache → demo            │
+                                        │  HISTORICAL — drives every      │
+                                        │  metric, ranking and score      │
+                                        └────────────────────────────────┘
+
+                                        ┌────────────────────────────────┐
+                                        │  Services (app/services)       │
+                                        │  AviationWeather.gov METAR     │
+                                        │  LIVE — context only, reachable │
+                                        │  from the agent and the API,    │
+                                        │  never from analytics           │
                                         └────────────────────────────────┘
 ```
 
 Four layers, each depending only on the one below it. The UI holds no analytics;
 the API holds no analytics; the agent holds no analytics. Everything numeric is
 in `app/analytics/`, which knows nothing about HTTP or LLMs and is therefore
-trivially testable — which is why 147 tests run in under three seconds with no
+trivially testable — which is why 232 tests run in under four seconds with no
 network and no API key.
 
 ### 1.2 Where AI is used, and where it is not
@@ -125,7 +135,61 @@ Everything rendered from API text — answers, tool output, airport names — is
 HTML-escaped first, including inside the Markdown renderer, so model-authored
 text cannot inject nodes into the page.
 
-### 1.6 `/health`
+### 1.6 Two sources, deliberately not connected
+
+The project reads from two public sources that answer different questions:
+
+| | Source | Horizon | Feeds |
+|---|---|---|---|
+| Historical | US DOT / BTS T-100 | Years | Every metric, ranking, proxy and score |
+| Live | AviationWeather.gov (NOAA/NWS) METAR | Right now | Nothing. Context only. |
+
+**Why keep them apart.** Current weather is the most tempting irrelevant
+variable in this whole domain: it is vivid, it is free, and it correlates with
+nothing an investor cares about on a ten-year horizon. Fog at SFO this morning
+says nothing about whether SFO needs another concourse. Letting it touch a score
+would be a category error, and — worse — would make an investment number depend
+on a third party's uptime.
+
+So the separation is structural, not just documented:
+
+- Live weather lives in its own package (`app/services/`) that `app.analytics`
+  does not import. The dependency simply does not exist.
+- Every conditions payload carries `used_in_scoring: false`, `data_kind:
+  "live_operational_context"` and a `source_role` sentence stating the split, so
+  the labelling travels with the data through the API, the tool result and the
+  chat answer.
+- The system prompt tells the agent to report both but never to use conditions
+  as evidence for or against an expansion case.
+- A test asserts an airport's Expansion Score is identical whether the weather
+  feed is healthy, dead, or reporting LIFR.
+
+**Why METAR, and why an ICAO lookup table.** AviationWeather.gov is a genuinely
+public, keyless JSON API from NOAA/NWS — no signup, no quota negotiation. It
+keys on ICAO identifiers while this project speaks IATA, so `app/services/icao.py`
+resolves them: a `K` prefix for the contiguous US, and an enumerated table for
+Alaska (`PA`), Hawaii (`PH`), Guam (`PG`) and Puerto Rico / USVI (`TJ`/`TI`),
+where the prefix rule does not hold. A test walks every airport in the dataset
+and asserts none is unmappable, so adding an airport cannot silently break the
+lookup.
+
+**Failure policy.** The provider returns failures, never raises them. Callers
+always get a payload with a `status` of `ok`, `no_report`, `unsupported`,
+`unavailable` or `disabled`. `GET /api/airports/{iata}/conditions` answers 200
+even on an upstream outage, because a supplementary panel failing is not a
+failed request. Observations are cached for ten minutes — METARs are issued
+about hourly, so anything shorter is wasted traffic — and failures are
+deliberately not cached, so a transient outage does not poison the cache for a
+full TTL.
+
+**What is derived, and what is reported.** Flight category comes from the API's
+`fltCat` when present. When it is absent the provider derives it from the
+standard FAA visibility/ceiling thresholds and sets `flight_category_derived:
+true`, so a reader can tell a reported category from a computed one. Everything
+else — wind, visibility, ceiling, temperature — is reported as the API gives it,
+with unit conversions (hPa to inHg) shown alongside the original.
+
+### 1.7 `/health`
 
 `/health` does no I/O at all: no dataset load, no upstream call, no Anthropic
 request. It returns 200 from in-process state. A health check that fails because
@@ -319,6 +383,10 @@ decision, and both the README and the UI say so.
 
 **Of the data**
 
+- Live METAR conditions are point-in-time context and carry no historical depth
+  here: the app reads the latest observation, not a climatology. A question like
+  "how often is BOS below minimums in January" is out of scope for this
+  integration, and would need the AWC's historical METAR archive.
 - No delay minutes, so no true congestion measure — hence the explicit
   redefinition of "congestion" as throughput per unit of capacity, stated in
   every congestion response.
@@ -369,6 +437,9 @@ decision, and both the README and the UI say so.
 | Data source | Extract-based BTS provider | Fake a REST API | Honest about how DOT actually distributes T-100. |
 | Cache | In-process dict + JSON on disk | Redis | Zero infrastructure for a two-service deploy. Swap it if this ever scales horizontally. |
 | Dataset breadth | 66 airports | The 9 named ones | Rankings need a cohort. Nine airports cannot produce a meaningful national ranking. |
+| Live weather | A separate `app/services/` package | A field on the metrics bundle | Structural isolation beats a naming convention. Analytics cannot import what it does not depend on, so weather can never leak into a score. |
+| Weather failures | Returned as a `status`, never raised | HTTP 5xx on outage | Conditions are supplementary. A dead third party should degrade one panel, not fail the request. |
+| ICAO mapping | Enumerated table plus a K-prefix rule | Ask the model, or a heuristic | Same discipline as region membership: the mapping is data, not a recollection. |
 | Metric caching | Memoized per (dataset, threshold) | Recompute per request | The metric frame is a pure function of its inputs; recomputing it per request is wasted work. |
 | Frontend | Static HTML/CSS/ES modules | Streamlit, or React + a bundler | No build step, no node toolchain, and it deploys as files inside the API service. A dashboard this size does not need a framework or a compile step. |
 | Frontend state | In-memory JS object | A store, or a database | Sessions are per-user and disposable; persistence would be scope creep. |
