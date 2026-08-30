@@ -191,46 +191,29 @@ pip install -r requirements.txt
 cp .env.example .env               # then add your ANTHROPIC_API_KEY (optional)
 ```
 
-### This is two processes, not one
-
-`uvicorn` serves **only the JSON API** on port 8000. The dashboard is a
-separate Streamlit process on port 8501. If you start just the backend and open
-<http://localhost:8000>, you will see a JSON banner and no UI — that is the API
-answering correctly, not a broken front end.
-
-**One command for both:**
+One process serves everything:
 
 ```bash
-./scripts/run_local.sh          # Ctrl-C stops both
-```
-
-**Or two terminals, if you prefer:**
-
-```bash
-# terminal 1 — backend (API only, no UI)
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-
-# terminal 2 — frontend (the dashboard)
-export API_BASE_URL=http://localhost:8000
-streamlit run frontend/streamlit_app.py --server.port 8501
 ```
 
 Then open:
 
 | URL | What it is |
 |---|---|
-| <http://localhost:8501> | **The dashboard — this is the front end** |
+| <http://localhost:8000> | **The dashboard** |
 | <http://localhost:8000/docs> | Interactive API docs |
 | <http://localhost:8000/health> | Health probe |
-| <http://localhost:8000> | JSON service banner (no UI by design) |
+| <http://localhost:8000/api> | JSON service banner |
 
-If the dashboard loads but shows *"Cannot reach the backend"*, the API is not
-running or `API_BASE_URL` points at the wrong port.
+The dashboard is plain HTML, CSS and ES modules in `frontend/`, served by the
+same FastAPI app. There is no build step, no bundler and no node toolchain —
+edit a file and reload the page.
 
 Run the tests:
 
 ```bash
-pytest                              # 140 tests
+pytest                              # 147 tests
 ```
 
 Regenerate the demo dataset:
@@ -278,31 +261,51 @@ curl -X POST localhost:8000/api/chat \
 
 ## Deploying to Render
 
-The repo ships a [`render.yaml`](render.yaml) blueprint that stands up **two
-services**. Nothing is hardcoded: the backend binds `$PORT`, and the frontend
-gets the backend's hostname injected by Render.
+The repo ships a [`render.yaml`](render.yaml) blueprint for **one web service**
+that serves both the API and the dashboard. The backend binds `$PORT`; nothing
+is hardcoded.
 
 1. Push this repository to GitHub.
 2. In Render: **New → Blueprint**, pick the repo, let it read `render.yaml`.
-3. Render creates:
-   - **`airport-intelligence-api`** — `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, health check `/health`
-   - **`airport-intelligence-ui`** — `streamlit run frontend/streamlit_app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true`, health check `/_stcore/health`
-4. Set the one secret: on **`airport-intelligence-api` → Environment**, add
-   `ANTHROPIC_API_KEY`. It is declared `sync: false`, so Render prompts for it
-   and it never enters git. Skip it and the app runs in deterministic mode.
-5. Deploy. The UI's `API_BASE_URL` is wired from the API service's `host`
-   property, so the two find each other with no manual URL entry.
-6. Verify: `https://airport-intelligence-api.onrender.com/health` returns
-   `{"status":"ok",...}` and `/docs` renders. Open the UI URL and check the
-   sidebar shows a data-source badge.
+3. Render creates **`airport-intelligence`**, running
+   `uvicorn app.main:app --host 0.0.0.0 --port $PORT` with health check `/health`.
+4. Set the one secret: **Environment → `ANTHROPIC_API_KEY`**. It is declared
+   `sync: false`, so Render prompts for it and it never enters git. Skip it and
+   the app runs in deterministic mode.
+5. Deploy, then verify `https://<your-service>.onrender.com/health` returns
+   `{"status":"ok",...}`, `/docs` renders, and `/` shows the dashboard.
 
-**Notes for the free tier.** Free services sleep after inactivity, so the first
-request after a nap takes ~30s while the container wakes — the frontend's
-60-second client timeout absorbs it. `USE_DEMO_DATA` defaults to `"true"` in the
-blueprint so a fresh deploy is demoable immediately; flip it to `"false"` once
-you have wired up a live BTS extract.
+**Why one service and not two?** The original plan used a Streamlit frontend,
+which needs its own Python runtime and therefore its own service. A static
+HTML/JS dashboard does not: serving it from FastAPI means one deploy, one URL,
+no cross-origin requests and no CORS to misconfigure. Fewer moving parts on a
+free tier that sleeps.
 
----
+**Free tier note.** Free services sleep after inactivity, so the first request
+after a nap takes ~30s while the container wakes. The dashboard's 60-second
+client timeout absorbs it.
+
+### Splitting the dashboard onto its own service
+
+`frontend/` is a self-contained static bundle, so you can host it on Render's
+static-site CDN if you prefer. Add a second service to `render.yaml`:
+
+```yaml
+  - type: web
+    name: airport-intelligence-ui
+    runtime: static
+    staticPublishPath: ./frontend
+    # Tell the bundle where the API lives; app.js reads window.AII_API_BASE.
+    buildCommand: >-
+      printf 'window.AII_API_BASE=%s;' "\"https://$API_HOST\"" > frontend/config.js
+    envVars:
+      - key: API_HOST
+        fromService: { type: web, name: airport-intelligence, property: host }
+```
+
+and add `<script src="/config.js"></script>` above the module script in
+`index.html`. Keep `CORS_ALLOW_ORIGINS` set on the API, since the browser is
+then making a cross-origin request.
 
 ## Project layout
 
@@ -330,10 +333,13 @@ app/
     tools.py             tool schemas + dispatch to analytics
     service.py           Claude tool-use loop
     fallback.py          deterministic router for no-key / API-down
-frontend/
-  streamlit_app.py       the dashboard
-  api_client.py          typed HTTP client with timeouts
-tests/                   140 tests
+frontend/               static dashboard, no build step
+  index.html             page shell
+  styles.css             design tokens + components, light and dark
+  js/api.js              fetch client with timeouts and typed errors
+  js/markdown.js         ~120-line renderer for the agent's answers
+  js/app.js              tabs, rendering, state
+tests/                   147 tests
 scripts/                 seed-data generator
 docs/DESIGN.md           architecture, methodology, limitations
 ```

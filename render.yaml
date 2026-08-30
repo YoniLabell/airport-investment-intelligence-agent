@@ -1,15 +1,19 @@
-# Render blueprint: two services from one repository.
+# Render blueprint.
 #
-#   1. airport-intelligence-api  — FastAPI backend (uvicorn)
-#   2. airport-intelligence-ui   — Streamlit frontend
+# One web service. FastAPI serves the JSON API *and* the dashboard, which is
+# plain static HTML/CSS/JS with no build step. Since the two share an origin
+# the browser makes no cross-origin request, so there is no API base URL to
+# configure and no CORS preflight to get wrong.
 #
 # Deploy with: Render Dashboard -> New -> Blueprint -> pick this repo.
-# The frontend's API_BASE_URL is wired from the backend service, so no URL is
-# hardcoded anywhere.
+#
+# If you would rather host the dashboard on Render's static-site CDN as a
+# second service, see "Splitting the dashboard onto its own service" in the
+# README — frontend/ is already a self-contained static bundle.
 
 services:
   - type: web
-    name: airport-intelligence-api
+    name: airport-intelligence
     runtime: python
     plan: free
     region: oregon
@@ -30,31 +34,4 @@ services:
       - key: LOG_LEVEL
         value: INFO
       - key: CORS_ALLOW_ORIGINS
-        value: "*"
-
-  - type: web
-    name: airport-intelligence-ui
-    runtime: python
-    plan: free
-    region: oregon
-    branch: main
-    buildCommand: pip install -r requirements.txt
-    startCommand: >-
-      streamlit run frontend/streamlit_app.py
-      --server.port $PORT
-      --server.address 0.0.0.0
-      --server.headless true
-      --browser.gatherUsageStats false
-    healthCheckPath: /_stcore/health
-    autoDeploy: true
-    envVars:
-      - key: PYTHON_VERSION
-        value: "3.11.9"
-      - key: API_BASE_URL
-        fromService:
-          type: web
-          name: airport-intelligence-api
-          property: host          # e.g. airport-intelligence-api.onrender.com
-                                  # the client prepends https:// when no scheme is given
-      - key: API_TIMEOUT_SECONDS
-        value: "60"
+        value: "*"           # only needed if you split the dashboard out

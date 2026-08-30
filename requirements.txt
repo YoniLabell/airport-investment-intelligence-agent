@@ -13,8 +13,8 @@ numpy==2.4.6
 anthropic==1.2.0
 httpx==0.28.1
 
-# Frontend
-streamlit==1.62.0
-
 # Tests
 pytest==9.1.1
+
+# The dashboard is plain HTML/CSS/JS served by FastAPI — no frontend
+# dependencies, no build step, no node toolchain.

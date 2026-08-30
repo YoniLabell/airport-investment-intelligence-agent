@@ -16,10 +16,11 @@ limitations and tradeoffs.
 ### 1.1 The shape
 
 ```
-┌──────────────────┐        HTTP        ┌────────────────────────────────┐
-│  Streamlit UI    │ ─────────────────► │  FastAPI                       │
-│  chat · rankings │ ◄───────────────── │  validation + shaping only     │
-│  compare · score │                    └──────────────┬─────────────────┘
+┌──────────────────┐       fetch        ┌────────────────────────────────┐
+│  Static dashboard│ ─────────────────► │  FastAPI                       │
+│  HTML · CSS · JS │ ◄───────────────── │  validation + shaping only     │
+│  chat · rankings │   (same origin;    │  + serves the dashboard files  │
+│  compare · score │    no CORS)        └──────────────┬─────────────────┘
 └──────────────────┘                                   │
                                         ┌──────────────▼─────────────────┐
                                         │  Agent (app/agent)             │
@@ -40,7 +41,7 @@ limitations and tradeoffs.
 Four layers, each depending only on the one below it. The UI holds no analytics;
 the API holds no analytics; the agent holds no analytics. Everything numeric is
 in `app/analytics/`, which knows nothing about HTTP or LLMs and is therefore
-trivially testable — which is why 140 tests run in under three seconds with no
+trivially testable — which is why 147 tests run in under three seconds with no
 network and no API key.
 
 ### 1.2 Where AI is used, and where it is not
@@ -102,7 +103,29 @@ The app is never simply *down*. It degrades to a less capable but still correct
 and still honest state — which for a screening tool that gets demoed on
 conference-room WiFi is the right tradeoff.
 
-### 1.5 `/health`
+### 1.5 The dashboard
+
+`frontend/` is plain HTML, CSS custom properties and three ES modules, served
+by `StaticFiles` from the same FastAPI app. No framework, no bundler, no
+`package.json`.
+
+Three consequences worth stating:
+
+- **Same origin.** The browser never makes a cross-origin request, so the UI
+  needs no API base URL and CORS cannot be misconfigured. Hosting the bundle
+  separately still works — `app.js` honours `window.AII_API_BASE`.
+- **The mount is registered last.** Starlette matches routes in order, so
+  `/health` and `/api/*` always win and the static mount only catches what is
+  left. There is a test asserting exactly that.
+- **The UI computes nothing.** It formats and lays out figures the API already
+  calculated. The same discipline that keeps arithmetic out of the LLM keeps it
+  out of the browser: one place to audit, one place to fix.
+
+Everything rendered from API text — answers, tool output, airport names — is
+HTML-escaped first, including inside the Markdown renderer, so model-authored
+text cannot inject nodes into the page.
+
+### 1.6 `/health`
 
 `/health` does no I/O at all: no dataset load, no upstream call, no Anthropic
 request. It returns 200 from in-process state. A health check that fails because
@@ -347,7 +370,9 @@ decision, and both the README and the UI say so.
 | Cache | In-process dict + JSON on disk | Redis | Zero infrastructure for a two-service deploy. Swap it if this ever scales horizontally. |
 | Dataset breadth | 66 airports | The 9 named ones | Rankings need a cohort. Nine airports cannot produce a meaningful national ranking. |
 | Metric caching | Memoized per (dataset, threshold) | Recompute per request | The metric frame is a pure function of its inputs; recomputing it per request is wasted work. |
-| Frontend state | Streamlit `session_state` | A database | Sessions are per-user and disposable; persistence would be scope creep. |
+| Frontend | Static HTML/CSS/ES modules | Streamlit, or React + a bundler | No build step, no node toolchain, and it deploys as files inside the API service. A dashboard this size does not need a framework or a compile step. |
+| Frontend state | In-memory JS object | A store, or a database | Sessions are per-user and disposable; persistence would be scope creep. |
+| Markdown rendering | ~120 lines in `js/markdown.js` | `marked` from a CDN | The agent emits a known, narrow subset. A focused renderer avoids a CDN that may be unreachable and lets us escape HTML before any markup is produced. |
 | Scoring window | 2022–2024 | 2019 baseline | A 2019 baseline makes every CAGR a pandemic-recovery artefact. |
 
 ---

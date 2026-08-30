@@ -78,9 +78,13 @@ def _not_found(exc: UnknownAirportError) -> HTTPException:
 # ---------------------------------------------------------------------------
 # Service endpoints
 # ---------------------------------------------------------------------------
-@router.get("/", response_model=RootResponse, tags=["service"])
-def root() -> RootResponse:
-    """Service banner and endpoint index."""
+@router.get("/api", response_model=RootResponse, tags=["service"])
+def api_root() -> RootResponse:
+    """Service banner and endpoint index.
+
+    ``GET /`` serves the dashboard itself (static HTML), so the machine-readable
+    banner lives here.
+    """
     return RootResponse(
         name="Airport Investment Intelligence API",
         version=__version__,
@@ -91,6 +95,7 @@ def root() -> RootResponse:
         ),
         docs_url="/docs",
         endpoints=[
+            "GET /            (dashboard)",
             "GET /health",
             "GET /api/airports",
             "GET /api/airports/{iata}/metrics",

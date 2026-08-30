@@ -12,11 +12,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app import __version__
 from app.api.routes import router
-from app.config import get_settings
+from app.config import PROJECT_ROOT, get_settings
 from app.logging_config import configure_logging, get_logger
+
+FRONTEND_DIR = PROJECT_ROOT / "frontend"
 
 settings = get_settings()
 configure_logging(settings.log_level)
@@ -64,6 +67,17 @@ app.add_middleware(
 )
 
 app.include_router(router)
+
+# The dashboard is plain static HTML/CSS/JS with no build step, served by this
+# same app. Mounting it last means the API routes above always win; anything
+# else falls through to a file. Serving both from one origin also means the
+# browser never makes a cross-origin request, so the UI needs no API base URL
+# and no CORS preflight.
+if FRONTEND_DIR.is_dir():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="dashboard")
+    log.info("serving dashboard from %s", FRONTEND_DIR)
+else:  # pragma: no cover - only when the frontend is deployed separately
+    log.warning("frontend directory %s not found; API-only mode", FRONTEND_DIR)
 
 
 @app.exception_handler(Exception)
