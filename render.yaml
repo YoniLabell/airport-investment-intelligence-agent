@@ -1,0 +1,60 @@
+# Render blueprint: two services from one repository.
+#
+#   1. airport-intelligence-api  — FastAPI backend (uvicorn)
+#   2. airport-intelligence-ui   — Streamlit frontend
+#
+# Deploy with: Render Dashboard -> New -> Blueprint -> pick this repo.
+# The frontend's API_BASE_URL is wired from the backend service, so no URL is
+# hardcoded anywhere.
+
+services:
+  - type: web
+    name: airport-intelligence-api
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: ANTHROPIC_API_KEY
+        sync: false          # set this in the Render dashboard; never in git
+      - key: USE_DEMO_DATA
+        value: "true"        # flip to false once a live BTS extract is wired up
+      - key: LONG_HAUL_MILES
+        value: "2500"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: CORS_ALLOW_ORIGINS
+        value: "*"
+
+  - type: web
+    name: airport-intelligence-ui
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: >-
+      streamlit run frontend/streamlit_app.py
+      --server.port $PORT
+      --server.address 0.0.0.0
+      --server.headless true
+      --browser.gatherUsageStats false
+    healthCheckPath: /_stcore/health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: API_BASE_URL
+        fromService:
+          type: web
+          name: airport-intelligence-api
+          property: host          # e.g. airport-intelligence-api.onrender.com
+                                  # the client prepends https:// when no scheme is given
+      - key: API_TIMEOUT_SECONDS
+        value: "60"

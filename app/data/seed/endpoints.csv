@@ -1,0 +1,132 @@
+iata,name,country,latitude,longitude
+ABQ,Albuquerque International Sunport,US,35.0402,-106.6091
+ACK,Nantucket Memorial,US,41.2531,-70.0603
+ADQ,Kodiak Airport,US,57.7500,-152.4939
+AKL,Auckland Airport,NZ,-37.0082,174.7850
+ALB,Albany International,US,42.7483,-73.8017
+AMS,Amsterdam Schiphol,NL,52.3105,4.7683
+ANC,Ted Stevens Anchorage International,US,61.1743,-149.9962
+ATH,Athens International,GR,37.9364,23.9445
+ATL,Hartsfield-Jackson Atlanta International,US,33.6407,-84.4277
+AUS,Austin-Bergstrom International,US,30.1975,-97.6664
+BCN,Barcelona El Prat,ES,41.2974,2.0833
+BDL,Bradley International,US,41.9389,-72.6832
+BET,Bethel Airport,US,60.7798,-161.8380
+BNA,Nashville International,US,36.1263,-86.6774
+BOG,El Dorado International,CO,4.7016,-74.1469
+BOI,Boise Air Terminal,US,43.5644,-116.2228
+BOM,Chhatrapati Shivaji Maharaj,IN,19.0896,72.8656
+BOS,Boston Logan International,US,42.3656,-71.0096
+BRW,Wiley Post-Will Rogers Memorial,US,71.2854,-156.7660
+BTV,Burlington International,US,44.4720,-73.1533
+BUF,Buffalo Niagara International,US,42.9405,-78.7322
+BUR,Hollywood Burbank,US,34.2007,-118.3587
+BWI,Baltimore/Washington International,US,39.1754,-76.6683
+CDG,Paris Charles de Gaulle,FR,49.0097,2.5479
+CDV,Merle K. Mudhole Smith,US,60.4917,-145.4776
+CLE,Cleveland Hopkins International,US,41.4117,-81.8498
+CLT,Charlotte Douglas International,US,35.2144,-80.9473
+CUN,Cancun International,MX,21.0365,-86.8771
+CVG,Cincinnati/Northern Kentucky International,US,39.0489,-84.6678
+DAL,Dallas Love Field,US,32.8471,-96.8518
+DCA,Ronald Reagan Washington National,US,38.8512,-77.0402
+DEL,Indira Gandhi International,IN,28.5562,77.1000
+DEN,Denver International,US,39.8561,-104.6737
+DFW,Dallas/Fort Worth International,US,32.8998,-97.0403
+DLG,Dillingham Airport,US,58.9967,-158.5033
+DOH,Hamad International,QA,25.2731,51.6141
+DTW,Detroit Metropolitan Wayne County,US,42.2162,-83.3554
+DUB,Dublin Airport,IE,53.4213,-6.2701
+DXB,Dubai International,AE,25.2532,55.3657
+EWR,Newark Liberty International,US,40.6895,-74.1745
+EZE,Buenos Aires Ezeiza,AR,-34.8222,-58.5358
+FAI,Fairbanks International,US,64.8151,-147.8560
+FCO,Rome Fiumicino,IT,41.8003,12.2389
+FLL,Fort Lauderdale-Hollywood International,US,26.0742,-80.1506
+FRA,Frankfurt am Main,DE,50.0379,8.5622
+GDL,Guadalajara International,MX,20.5218,-103.3111
+GRU,Sao Paulo Guarulhos,BR,-23.4356,-46.4731
+GUM,Antonio B. Won Pat International,US,13.4839,144.7960
+HKG,Hong Kong International,HK,22.3080,113.9185
+HND,Tokyo Haneda,JP,35.5494,139.7798
+HNL,Daniel K. Inouye International,US,21.3187,-157.9224
+HOU,William P. Hobby,US,29.6454,-95.2789
+IAD,Washington Dulles International,US,38.9531,-77.4565
+IAH,George Bush Intercontinental,US,29.9902,-95.3368
+ICN,Incheon International,KR,37.4602,126.4407
+IND,Indianapolis International,US,39.7169,-86.2956
+ITO,Hilo International,US,19.7203,-155.0485
+JAX,Jacksonville International,US,30.4941,-81.6879
+JFK,John F. Kennedy International,US,40.6413,-73.7781
+JNU,Juneau International,US,58.3549,-134.5763
+KEF,Keflavik International,IS,63.9850,-22.6056
+KIN,Norman Manley International,JM,17.9357,-76.7875
+KOA,Ellison Onizuka Kona International,US,19.7388,-156.0456
+KTN,Ketchikan International,US,55.3556,-131.7137
+LAS,Harry Reid International,US,36.0840,-115.1537
+LAX,Los Angeles International,US,33.9416,-118.4085
+LGA,LaGuardia,US,40.7769,-73.8740
+LHR,London Heathrow,GB,51.4700,-0.4543
+LIH,Lihue Airport,US,21.9760,-159.3390
+LIM,Jorge Chavez International,PE,-12.0219,-77.1143
+LIS,Lisbon Portela,PT,38.7742,-9.1342
+MAD,Madrid Barajas,ES,40.4719,-3.5626
+MBJ,Sangster International,JM,18.5037,-77.9134
+MCI,Kansas City International,US,39.2976,-94.7139
+MCO,Orlando International,US,28.4312,-81.3081
+MDW,Chicago Midway International,US,41.7868,-87.7522
+MEX,Mexico City International,MX,19.4363,-99.0721
+MHT,Manchester-Boston Regional,US,42.9326,-71.4357
+MIA,Miami International,US,25.7959,-80.2871
+MSP,Minneapolis-St Paul International,US,44.8848,-93.2223
+MSY,Louis Armstrong New Orleans International,US,29.9934,-90.2580
+MUC,Munich Airport,DE,48.3538,11.7861
+MVY,Martha's Vineyard Airport,US,41.3931,-70.6143
+NAS,Lynden Pindling International,BS,25.0390,-77.4661
+NRT,Narita International,JP,35.7720,140.3929
+OAK,Oakland International,US,37.7126,-122.2197
+OGG,Kahului Airport,US,20.8986,-156.4305
+OME,Nome Airport,US,64.5122,-165.4451
+ONT,Ontario International,US,34.0560,-117.6012
+ORD,Chicago O'Hare International,US,41.9742,-87.9073
+OTZ,Ralph Wien Memorial,US,66.8847,-162.5985
+PDX,Portland International,US,45.5898,-122.5951
+PHL,Philadelphia International,US,39.8729,-75.2437
+PHX,Phoenix Sky Harbor International,US,33.4342,-112.0116
+PIT,Pittsburgh International,US,40.4915,-80.2329
+POS,Piarco International,TT,10.5954,-61.3372
+PSP,Palm Springs International,US,33.8297,-116.5067
+PTY,Tocumen International,PA,9.0714,-79.3835
+PUJ,Punta Cana International,DO,18.5674,-68.3634
+PVD,Rhode Island T.F. Green International,US,41.7240,-71.4283
+PVG,Shanghai Pudong International,CN,31.1443,121.8083
+PVR,Puerto Vallarta International,MX,20.6801,-105.2544
+PWM,Portland International Jetport,US,43.6462,-70.3093
+RDU,Raleigh-Durham International,US,35.8801,-78.7880
+RNO,Reno-Tahoe International,US,39.4991,-119.7681
+RSW,Southwest Florida International,US,26.5362,-81.7552
+SAN,San Diego International,US,32.7338,-117.1933
+SAT,San Antonio International,US,29.5337,-98.4698
+SAV,Savannah/Hilton Head International,US,32.1276,-81.2021
+SCC,Deadhorse Airport,US,70.1947,-148.4652
+SDQ,Las Americas International,DO,18.4297,-69.6689
+SEA,Seattle-Tacoma International,US,47.4502,-122.3088
+SFO,San Francisco International,US,37.6213,-122.3790
+SIN,Singapore Changi,SG,1.3644,103.9915
+SIT,Sitka Rocky Gutierrez,US,57.0471,-135.3616
+SJC,Norman Y. Mineta San Jose International,US,37.3639,-121.9289
+SJD,Los Cabos International,MX,23.1518,-109.7215
+SJU,Luis Munoz Marin International,US,18.4394,-66.0018
+SLC,Salt Lake City International,US,40.7899,-111.9791
+SMF,Sacramento International,US,38.6954,-121.5908
+SNA,"John Wayne Airport, Orange County",US,33.6757,-117.8682
+STL,St. Louis Lambert International,US,38.7487,-90.3700
+SXM,Princess Juliana International,SX,18.0410,-63.1089
+SYD,Sydney Kingsford Smith,AU,-33.9399,151.1753
+TLV,Ben Gurion International,IL,32.0114,34.8867
+TPA,Tampa International,US,27.9755,-82.5332
+TPE,Taiwan Taoyuan International,TW,25.0777,121.2328
+YUL,Montreal-Trudeau International,CA,45.4706,-73.7408
+YVR,Vancouver International,CA,49.1967,-123.1815
+YYZ,Toronto Pearson International,CA,43.6777,-79.6248
+ZRH,Zurich Airport,CH,47.4647,8.5492

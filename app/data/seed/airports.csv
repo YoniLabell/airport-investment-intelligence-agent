@@ -1,0 +1,67 @@
+iata,name,city,state,region,latitude,longitude,runways,gates,slot_controlled
+BOS,Boston Logan International,Boston,MA,New England,42.3656,-71.0096,6,102,true
+PVD,Rhode Island T.F. Green International,Providence,RI,New England,41.7240,-71.4283,2,22,false
+BDL,Bradley International,Windsor Locks,CT,New England,41.9389,-72.6832,2,24,false
+MHT,Manchester-Boston Regional,Manchester,NH,New England,42.9326,-71.4357,2,12,false
+PWM,Portland International Jetport,Portland,ME,New England,43.6462,-70.3093,2,11,false
+BTV,Burlington International,Burlington,VT,New England,44.4720,-73.1533,2,8,false
+JFK,John F. Kennedy International,New York,NY,Mid-Atlantic,40.6413,-73.7781,4,128,true
+EWR,Newark Liberty International,Newark,NJ,Mid-Atlantic,40.6895,-74.1745,3,118,true
+LGA,LaGuardia,New York,NY,Mid-Atlantic,40.7769,-73.8740,2,82,true
+PHL,Philadelphia International,Philadelphia,PA,Mid-Atlantic,39.8729,-75.2437,4,126,false
+BWI,Baltimore/Washington International,Baltimore,MD,Mid-Atlantic,39.1754,-76.6683,4,77,false
+DCA,Ronald Reagan Washington National,Arlington,VA,Mid-Atlantic,38.8512,-77.0402,3,60,true
+IAD,Washington Dulles International,Dulles,VA,Mid-Atlantic,38.9531,-77.4565,4,123,false
+ALB,Albany International,Albany,NY,Mid-Atlantic,42.7483,-73.8017,3,16,false
+BUF,Buffalo Niagara International,Buffalo,NY,Mid-Atlantic,42.9405,-78.7322,2,24,false
+PIT,Pittsburgh International,Pittsburgh,PA,Mid-Atlantic,40.4915,-80.2329,4,51,false
+ATL,Hartsfield-Jackson Atlanta International,Atlanta,GA,Southeast,33.6407,-84.4277,5,192,false
+CLT,Charlotte Douglas International,Charlotte,NC,Southeast,35.2144,-80.9473,4,115,false
+MCO,Orlando International,Orlando,FL,Southeast,28.4312,-81.3081,4,129,false
+MIA,Miami International,Miami,FL,Southeast,25.7959,-80.2871,4,131,false
+FLL,Fort Lauderdale-Hollywood International,Fort Lauderdale,FL,Southeast,26.0742,-80.1506,2,66,false
+TPA,Tampa International,Tampa,FL,Southeast,27.9755,-82.5332,3,62,false
+RDU,Raleigh-Durham International,Raleigh,NC,Southeast,35.8801,-78.7880,3,43,false
+BNA,Nashville International,Nashville,TN,Southeast,36.1263,-86.6774,4,54,false
+RSW,Southwest Florida International,Fort Myers,FL,Southeast,26.5362,-81.7552,1,28,false
+JAX,Jacksonville International,Jacksonville,FL,Southeast,30.4941,-81.6879,2,20,false
+SAV,Savannah/Hilton Head International,Savannah,GA,Southeast,32.1276,-81.2021,2,14,false
+ORD,Chicago O'Hare International,Chicago,IL,Midwest,41.9742,-87.9073,8,191,true
+MDW,Chicago Midway International,Chicago,IL,Midwest,41.7868,-87.7522,5,43,false
+DTW,Detroit Metropolitan Wayne County,Detroit,MI,Midwest,42.2162,-83.3554,6,129,false
+MSP,Minneapolis-St Paul International,Minneapolis,MN,Midwest,44.8848,-93.2223,4,131,false
+STL,St. Louis Lambert International,St. Louis,MO,Midwest,38.7487,-90.3700,4,62,false
+MCI,Kansas City International,Kansas City,MO,Midwest,39.2976,-94.7139,3,39,false
+CLE,Cleveland Hopkins International,Cleveland,OH,Midwest,41.4117,-81.8498,3,39,false
+CVG,Cincinnati/Northern Kentucky International,Hebron,KY,Midwest,39.0489,-84.6678,4,51,false
+IND,Indianapolis International,Indianapolis,IN,Midwest,39.7169,-86.2956,3,39,false
+DFW,Dallas/Fort Worth International,Dallas,TX,South Central,32.8998,-97.0403,7,174,false
+DAL,Dallas Love Field,Dallas,TX,South Central,32.8471,-96.8518,3,20,false
+IAH,George Bush Intercontinental,Houston,TX,South Central,29.9902,-95.3368,5,130,false
+HOU,William P. Hobby,Houston,TX,South Central,29.6454,-95.2789,4,30,false
+AUS,Austin-Bergstrom International,Austin,TX,South Central,30.1975,-97.6664,2,34,false
+MSY,Louis Armstrong New Orleans International,New Orleans,LA,South Central,29.9934,-90.2580,3,35,false
+SAT,San Antonio International,San Antonio,TX,South Central,29.5337,-98.4698,3,26,false
+DEN,Denver International,Denver,CO,Mountain West,39.8561,-104.6737,6,174,false
+PHX,Phoenix Sky Harbor International,Phoenix,AZ,Mountain West,33.4342,-112.0116,3,122,false
+LAS,Harry Reid International,Las Vegas,NV,Mountain West,36.0840,-115.1537,4,110,false
+SLC,Salt Lake City International,Salt Lake City,UT,Mountain West,40.7899,-111.9791,4,94,false
+ABQ,Albuquerque International Sunport,Albuquerque,NM,Mountain West,35.0402,-106.6091,3,23,false
+BOI,Boise Air Terminal,Boise,ID,Mountain West,43.5644,-116.2228,3,12,false
+RNO,Reno-Tahoe International,Reno,NV,Mountain West,39.4991,-119.7681,3,23,false
+LAX,Los Angeles International,Los Angeles,CA,Pacific West,33.9416,-118.4085,4,146,false
+SFO,San Francisco International,San Francisco,CA,Pacific West,37.6213,-122.3790,4,90,false
+SAN,San Diego International,San Diego,CA,Pacific West,32.7338,-117.1933,1,51,false
+SNA,"John Wayne Airport, Orange County",Santa Ana,CA,Pacific West,33.6757,-117.8682,1,20,false
+SJC,Norman Y. Mineta San Jose International,San Jose,CA,Pacific West,37.3639,-121.9289,2,30,false
+OAK,Oakland International,Oakland,CA,Pacific West,37.7126,-122.2197,2,30,false
+SMF,Sacramento International,Sacramento,CA,Pacific West,38.6954,-121.5908,2,32,false
+ONT,Ontario International,Ontario,CA,Pacific West,34.0560,-117.6012,2,26,false
+BUR,Hollywood Burbank,Burbank,CA,Pacific West,34.2007,-118.3587,2,14,false
+PDX,Portland International,Portland,OR,Pacific West,45.5898,-122.5951,3,55,false
+SEA,Seattle-Tacoma International,Seattle,WA,Pacific West,47.4502,-122.3088,3,91,false
+PSP,Palm Springs International,Palm Springs,CA,Pacific West,33.8297,-116.5067,2,17,false
+ANC,Ted Stevens Anchorage International,Anchorage,AK,Non-Contiguous,61.1743,-149.9962,3,20,false
+FAI,Fairbanks International,Fairbanks,AK,Non-Contiguous,64.8151,-147.8560,3,10,false
+HNL,Daniel K. Inouye International,Honolulu,HI,Non-Contiguous,21.3187,-157.9224,4,57,false
+OGG,Kahului Airport,Kahului,HI,Non-Contiguous,20.8986,-156.4305,2,16,false
