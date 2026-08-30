@@ -191,6 +191,23 @@ saying so; the agent's system prompt forbids using conditions as investment
 evidence; and a test asserts an airport's score is byte-identical whether the
 weather feed is healthy, degraded or reporting LIFR.
 
+#### Checking it against the live API
+
+The test-suite mocks the transport, which proves the parser handles the
+*documented* contract but cannot prove the live API still emits it. One script
+closes that gap:
+
+```bash
+python scripts/verify_aviationweather.py            # SFO LAX ANC BOS
+python scripts/verify_aviationweather.py SFO HNL    # or pick your own
+```
+
+It fetches live, checks every field the provider reads is present (naming any
+that went missing, and flagging new ones), runs the unmocked provider on each
+airport, and asserts a weather fetch leaves the Expansion Score untouched.
+Exit 0 means the live response matches; exit 1 names what drifted. Run it after
+a dependency bump or if conditions start coming back empty.
+
 If AviationWeather.gov is slow or down, the endpoint still returns **HTTP 200**
 with `status` set to `unavailable` — an outage degrades one panel, never a
 request. Statuses are `ok`, `no_report`, `unsupported`, `unavailable` and
