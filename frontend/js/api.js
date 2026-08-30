@@ -84,6 +84,9 @@ export const api = {
   regions:     ()                  => request('GET',  '/api/regions'),
   metrics:     (iata)              => request('GET',  `/api/airports/${encodeURIComponent(iata)}/metrics`),
   score:       (iata)              => request('GET',  `/api/airports/${encodeURIComponent(iata)}/score`),
+  // Supplementary context, so it gets a shorter leash than the analytics calls:
+  // the backend already caps its own upstream fetch at 8s.
+  conditions:  (iata)              => request('GET',  `/api/airports/${encodeURIComponent(iata)}/conditions`, { timeout: 20_000 }),
   compare:     (iatas, view = 'full') => request('POST', '/api/compare', { body: { iatas, view } }),
   rank:        (region, limit, sortBy) =>
     request('POST', '/api/rank', { body: { region, limit, sort_by: sortBy } }),

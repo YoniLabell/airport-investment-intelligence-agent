@@ -30,25 +30,26 @@
       </div>
     </section>
 
+    <!-- Headline counts live in the KPI row; this panel carries the coverage
+         detail that does not fit there, so nothing is stated twice. -->
     <section class="panel">
       <h2 class="panel-title">Coverage</h2>
       <dl class="coverage" id="coverage">
-        <div><dt>Airports</dt><dd id="cov-airports">—</dd></div>
-        <div><dt>Non-stop segments</dt><dd id="cov-routes">—</dd></div>
-        <div><dt>Years</dt><dd id="cov-years">—</dd></div>
+        <div><dt>Regions</dt><dd id="cov-regions">—</dd></div>
+        <div><dt>Long-haul</dt><dd id="cov-threshold">—</dd></div>
       </dl>
-      <p class="fineprint" id="cov-threshold"></p>
     </section>
 
     <section class="panel">
       <button class="btn btn-block" id="refresh-btn" type="button">Refresh data</button>
-      <p class="fineprint api-line">API <code id="api-origin"></code></p>
+      <a class="doclink" id="api-docs" href="/docs" target="_blank" rel="noopener">
+        API docs <span aria-hidden="true">&rarr;</span>
+      </a>
     </section>
 
     <section class="panel disclaimer">
       <strong>Screening tool, not a valuation model.</strong>
-      Scores rank relative opportunity from public operating data. They contain no
-      construction costs, capital structure, traffic forecasts or returns.
+      No construction costs, capital structure or forecasts.
     </section>
   </aside>
 
@@ -61,6 +62,7 @@
       </div>
       <div class="topbar-right">
         <span id="badge-slot"></span>
+        <span id="live-badge-slot"></span>
         <button class="icon-btn" id="theme-btn" type="button"
                 title="Toggle light / dark" aria-label="Toggle light or dark theme">
           <!-- Inline SVG rather than a glyph: no font dependency, scales cleanly. -->
@@ -71,6 +73,17 @@
         </button>
       </div>
     </header>
+
+    <div class="kpis" id="kpis">
+      <div class="kpi"><span class="kpi-label">Airports covered</span>
+        <span class="kpi-value" id="kpi-airports">&mdash;</span></div>
+      <div class="kpi"><span class="kpi-label">Non-stop segments</span>
+        <span class="kpi-value" id="kpi-routes">&mdash;</span></div>
+      <div class="kpi"><span class="kpi-label">Data years</span>
+        <span class="kpi-value" id="kpi-years">&mdash;</span></div>
+      <div class="kpi"><span class="kpi-label">Live aviation API</span>
+        <span class="kpi-value" id="kpi-live">&mdash;</span></div>
+    </div>
 
     <nav class="tabs" role="tablist">
       <button class="tab is-active" role="tab" data-tab="chat"    aria-selected="true">Chat</button>
@@ -84,7 +97,7 @@
     <!-- Chat ---------------------------------------------------------- -->
     <section class="tabpanel is-active" id="panel-chat" role="tabpanel">
       <div class="section-head">
-        <h2>Ask the analyst agent</h2>
+        <h2>Identify US airports with the strongest expansion potential</h2>
         <p>Claude selects deterministic Python tools, runs them, and explains the
            results. It never computes a statistic itself. Follow-up questions keep
            the conversation's context.</p>
@@ -99,6 +112,10 @@
         <button class="btn" id="chat-clear" type="button" hidden>Clear</button>
       </form>
 
+      <p class="transcript-hint" id="transcript-hint">
+        Ask a question above, or pick a card. Every answer shows the exact tools
+        that produced each figure.
+      </p>
       <div class="transcript" id="transcript" aria-live="polite"></div>
     </section>
 

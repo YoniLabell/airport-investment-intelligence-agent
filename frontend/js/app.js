@@ -53,10 +53,10 @@ const COMPONENT_ORDER = [
 ];
 
 const EXAMPLE_QUESTIONS = [
-  'Which airports in New England are strong candidates for terminal expansion?',
-  'Compare LAX and SNA congestion levels.',
-  'What percentage of flights from ANC are long-haul?',
-  'What is the unmet flight demand at SFO and why?',
+  ['Regional screening', 'Which airports in New England are strong candidates for terminal expansion?'],
+  ['Head-to-head', 'Compare LAX and SNA congestion levels.'],
+  ['Route mix', 'What percentage of flights from ANC are long-haul?'],
+  ['Demand signal', 'What is the unmet flight demand at SFO and why?'],
 ];
 
 const SORT_OPTIONS = [
@@ -94,31 +94,72 @@ function statusBadge(status) {
   return `<span class="badge"><span class="status-dot ${cls}"></span>${escapeHtml(label)} DATA</span>`;
 }
 
+/** One short line per status. The DEMO badge in the topbar carries the warning,
+ *  so it is deliberately not repeated at length here. */
+const STATUS_NOTE = {
+  demo: 'Bundled offline snapshot. Illustrates the methodology; not live BTS output.',
+  cached: 'Stored copy of a previous live pull.',
+  live: 'Fetched from the upstream US DOT / BTS source.',
+};
+
 function renderDataStatus(provenance) {
-  const [cls, label, blurb] = STATUS_TEXT[provenance.status] || ['status-demo', 'UNKNOWN', ''];
+  const [cls, label] = STATUS_TEXT[provenance.status] || ['status-demo', 'UNKNOWN'];
   $('#badge-slot').innerHTML = statusBadge(provenance.status);
-
-  const warning = provenance.status === 'demo'
-    ? `<div class="banner banner-warn" style="margin:0">Bundled demo data. Figures illustrate the
-         methodology and are <strong>not</strong> live BTS output.</div>`
-    : `<div class="banner banner-info" style="margin:0">${escapeHtml(blurb)}</div>`;
-
   $('#data-status').innerHTML = `
     <div class="status-head"><span class="status-dot ${cls}"></span>${escapeHtml(label)}</div>
     <div class="status-source">${escapeHtml(provenance.source_name)}</div>
-    ${warning}
-    <p class="fineprint">${escapeHtml(provenance.description)}</p>
-    ${provenance.notes ? `<p class="fineprint"><em>${escapeHtml(provenance.notes)}</em></p>` : ''}`;
+    <p class="fineprint">${escapeHtml(
+      STATUS_NOTE[provenance.status] || provenance.description)}</p>`;
 }
 
 function renderCoverage(overview) {
-  $('#cov-airports').textContent = fmt.int(overview.airport_count);
-  $('#cov-routes').textContent = fmt.int(overview.route_count);
   const years = overview.years;
-  $('#cov-years').textContent = `${years[0]}–${years[years.length - 1]}`;
-  $('#cov-threshold').innerHTML =
-    `Long-haul threshold: <strong>${fmt.int(overview.long_haul_threshold_miles)} statute miles</strong>
-     (non-stop great-circle distance).`;
+  $('#kpi-airports').textContent = fmt.int(overview.airport_count);
+  $('#kpi-routes').textContent = fmt.int(overview.route_count);
+  $('#kpi-years').textContent = `${years[0]}–${years[years.length - 1]}`;
+  $('#cov-regions').textContent = fmt.int((overview.regions || []).length);
+  $('#cov-threshold').textContent =
+    `\u2265 ${fmt.int(overview.long_haul_threshold_miles)} sm`;
+}
+
+/* ── Live aviation API status ────────────────────────────────────────── */
+/** Statuses that mean the upstream answered us. */
+const LIVE_REACHABLE = new Set(['ok', 'no_report']);
+
+/**
+ * Probe the existing conditions endpoint once to learn whether the live
+ * aviation feed is usable. No new endpoint: this reuses the per-airport route
+ * the Expansion Score tab already calls, and the backend caches the upstream
+ * result, so the probe is close to free.
+ */
+async function loadLiveApiStatus() {
+  const kpi = $('#kpi-live');
+  const badge = $('#live-badge-slot');
+  kpi.textContent = 'Checking…';
+  kpi.className = 'kpi-value is-status kpi-off';
+
+  const probe = pick(['SFO', 'LAX', 'BOS'], 0);
+  if (!probe) { kpi.textContent = 'Unavailable'; return; }
+
+  let status;
+  try {
+    status = (await api.conditions(probe)).status;
+  } catch {
+    status = 'unavailable';
+  }
+
+  if (LIVE_REACHABLE.has(status)) {
+    kpi.className = 'kpi-value is-status kpi-ok';
+    kpi.innerHTML = '<span class="status-dot status-live"></span>Connected';
+    badge.innerHTML = '<span class="badge badge-live">'
+      + '<span class="status-dot"></span>LIVE AVIATION API</span>';
+    return;
+  }
+
+  // Only advertise the badge when the feed is actually available.
+  badge.innerHTML = '';
+  kpi.className = 'kpi-value is-status kpi-off';
+  kpi.textContent = status === 'disabled' ? 'Disabled' : 'Unavailable';
 }
 
 function showGlobalError(message) {
@@ -131,8 +172,11 @@ function showGlobalError(message) {
 function renderExamples() {
   const wrap = $('#examples');
   wrap.innerHTML = '';
-  EXAMPLE_QUESTIONS.forEach((question) => {
-    const button = html(`<button type="button" class="example">${escapeHtml(question)}</button>`);
+  EXAMPLE_QUESTIONS.forEach(([eyebrow, question]) => {
+    const button = html(`<button type="button" class="example">
+        <span class="example-eyebrow">${escapeHtml(eyebrow)}</span>
+        <span class="example-text">${escapeHtml(question)}</span>
+      </button>`);
     button.addEventListener('click', () => askQuestion(question));
     wrap.append(button);
   });
@@ -183,6 +227,7 @@ async function askQuestion(question) {
   $('#chat-clear').hidden = false;
 
   const transcript = $('#transcript');
+  $('#transcript-hint').hidden = true;
   transcript.append(turnElement('user', escapeHtml(text)));
 
   const pending = turnElement('assistant',
@@ -458,6 +503,8 @@ async function loadScore() {
         <p class="fineprint" style="margin-top:10px">${escapeHtml(score.methodology)}</p>
       </div>
 
+      <div id="conditions-slot"></div>
+
       <div class="card">
         <h3 class="card-title">Why this airport scored what it scored</h3>
         <div class="table-wrap"><table>
@@ -527,7 +574,108 @@ async function loadScore() {
       </div>`;
   } catch (err) {
     body.innerHTML = `<div class="banner banner-error">${escapeHtml(err.message)}</div>`;
+    return;
   }
+
+  // Deliberately fired after the score has painted, and deliberately NOT part
+  // of the Promise.all above: a weather failure must never be able to stop the
+  // Expansion Score from rendering. Not awaited, so it cannot block either.
+  loadConditions(iata);
+}
+
+/* ── Live operational context ────────────────────────────────────────── */
+const CONDITION_FAILURES = {
+  unavailable: 'Live conditions currently unavailable.',
+  no_report: 'No recent METAR available for this airport.',
+  unsupported: 'Live conditions are not available for this airport.',
+};
+
+/** Humanize the age the API already computed — formatting only, no new metric. */
+function observationAge(minutes) {
+  if (minutes === null || minutes === undefined) return null;
+  if (minutes < 1) return 'Updated just now';
+  if (minutes < 60) return `Updated ${Math.round(minutes)} minute${Math.round(minutes) === 1 ? '' : 's'} ago`;
+  const hours = minutes / 60;
+  return `Updated ${hours.toFixed(hours < 10 ? 1 : 0)} hours ago`;
+}
+
+async function loadConditions(iata) {
+  const slot = $('#conditions-slot');
+  if (!slot) return;
+  slot.innerHTML = `<div class="card"><div class="cond-head">
+      <h3 class="card-title" style="margin:0">Live operational context</h3>
+      <span class="cond-source">AVIATIONWEATHER.GOV</span></div>
+    <p class="loading" style="padding:12px 0 0">Loading current conditions…</p></div>`;
+
+  let data;
+  try {
+    data = await api.conditions(iata);
+  } catch (err) {
+    // The endpoint answers 200 even when the upstream is down, so reaching here
+    // means the request itself failed. Same user-facing outcome.
+    data = { status: 'unavailable' };
+  }
+
+  // The user may have switched airports while this was in flight; a late
+  // response must not overwrite the card for a different airport.
+  if ($('#score-airport').value !== iata) return;
+  slot.innerHTML = renderConditions(data);
+}
+
+function renderConditions(data) {
+  // `disabled` means the integration is switched off by configuration. That is
+  // not an error and must not be shown as one — render nothing at all.
+  if (data.status === 'disabled') return '';
+
+  const shell = (inner) => `<div class="card">
+      <div class="cond-head">
+        <h3 class="card-title" style="margin:0">Live operational context</h3>
+        <span class="cond-source" title="${escapeHtml(data.source || 'AviationWeather.gov')}">AVIATIONWEATHER.GOV</span>
+      </div>
+      ${inner}
+      <p class="cond-note">Live weather is operational context only and is
+        <strong>not</strong> used in the Airport Expansion Score.</p>
+    </div>`;
+
+  if (data.status !== 'ok') {
+    const message = CONDITION_FAILURES[data.status] || CONDITION_FAILURES.unavailable;
+    return shell(`<p class="stat-note" style="margin-top:12px">${escapeHtml(message)}</p>`);
+  }
+
+  const category = data.flight_category;
+  const pill = category
+    ? `<span class="fltcat fltcat-${escapeHtml(category.toLowerCase())}"
+             title="${escapeHtml(data.flight_category_meaning || '')}">${escapeHtml(category)}</span>`
+    : '';
+  const age = observationAge(data.observation_age_minutes);
+
+  // Only fields the API actually returned; nothing is derived here.
+  const rows = [
+    ['Visibility', data.visibility && data.visibility.display],
+    ['Wind', data.wind && data.wind.display],
+    // "no significant weather" is a real API value but an empty row for the
+    // reader, so it is dropped rather than displayed.
+    ['Weather', data.weather && data.weather.summary !== 'no significant weather'
+      ? data.weather.summary : null],
+    ['Ceiling', data.ceiling_feet_agl === null || data.ceiling_feet_agl === undefined
+      ? null : `${fmt.int(data.ceiling_feet_agl)} ft AGL`],
+    ['Temperature', data.temperature_c === null || data.temperature_c === undefined
+      ? null : `${fmt.dec(data.temperature_c, 0)} °C`],
+  ].filter(([, value]) => value !== null && value !== undefined && value !== '');
+
+  const list = rows.length
+    ? `<dl class="cond-list">${rows.map(([label, value]) =>
+        `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(String(value))}</dd>`).join('')}</dl>`
+    : '';
+
+  return shell(`
+    <div class="cond-summary">
+      ${pill}
+      ${data.station_name ? `<span class="cond-station">${escapeHtml(data.station_name)}</span>` : ''}
+    </div>
+    ${list}
+    ${age ? `<p class="stat-note" style="margin-top:12px">${escapeHtml(age)}</p>` : ''}
+    ${data.raw_metar ? `<div class="cond-metar">${escapeHtml(data.raw_metar)}</div>` : ''}`);
 }
 
 /* ── Wiring ──────────────────────────────────────────────────────────── */
@@ -591,6 +739,7 @@ function wireEvents() {
     state.chat = [];
     $('#transcript').innerHTML = '';
     $('#chat-clear').hidden = true;
+    $('#transcript-hint').hidden = false;
   });
 
   $('#rank-region').addEventListener('change', loadRankings);
@@ -619,6 +768,7 @@ function wireEvents() {
       state.overview = await api.overview();
       renderDataStatus(state.overview.provenance);
       renderCoverage(state.overview);
+      loadLiveApiStatus();
       state.loaded = { rank: false, compare: false, score: false };
       activateTab($('.tab.is-active').dataset.tab);
     } catch (err) {
@@ -637,7 +787,9 @@ function pick(preferred, fallbackIndex = 0) {
 }
 
 async function init() {
-  $('#api-origin').textContent = window.AII_API_BASE || window.location.origin;
+  // The docs link follows the API base, so a separately hosted bundle still
+  // points at the right service.
+  $('#api-docs').href = `${(window.AII_API_BASE || '').replace(/\/$/, '')}/docs`;
   initTheme();
   renderExamples();
   wireEvents();
@@ -668,6 +820,10 @@ async function init() {
   optionList($('#score-airport'), airportOptions(), pick(['SFO'], 0));
 
   activateTab('chat');
+
+  // Fired after the dashboard has painted: the live feed is supplementary, so
+  // it must never hold up the analytics view.
+  loadLiveApiStatus();
 }
 
 init();
