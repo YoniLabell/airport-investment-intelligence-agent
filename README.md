@@ -191,22 +191,41 @@ pip install -r requirements.txt
 cp .env.example .env               # then add your ANTHROPIC_API_KEY (optional)
 ```
 
-Two terminals:
+### This is two processes, not one
+
+`uvicorn` serves **only the JSON API** on port 8000. The dashboard is a
+separate Streamlit process on port 8501. If you start just the backend and open
+<http://localhost:8000>, you will see a JSON banner and no UI — that is the API
+answering correctly, not a broken front end.
+
+**One command for both:**
 
 ```bash
-# terminal 1 — backend
+./scripts/run_local.sh          # Ctrl-C stops both
+```
+
+**Or two terminals, if you prefer:**
+
+```bash
+# terminal 1 — backend (API only, no UI)
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-# terminal 2 — frontend
+# terminal 2 — frontend (the dashboard)
 export API_BASE_URL=http://localhost:8000
 streamlit run frontend/streamlit_app.py --server.port 8501
 ```
 
 Then open:
 
-- Dashboard — <http://localhost:8501>
-- API docs — <http://localhost:8000/docs>
-- Health — <http://localhost:8000/health>
+| URL | What it is |
+|---|---|
+| <http://localhost:8501> | **The dashboard — this is the front end** |
+| <http://localhost:8000/docs> | Interactive API docs |
+| <http://localhost:8000/health> | Health probe |
+| <http://localhost:8000> | JSON service banner (no UI by design) |
+
+If the dashboard loads but shows *"Cannot reach the backend"*, the API is not
+running or `API_BASE_URL` points at the wrong port.
 
 Run the tests:
 
